@@ -1,6 +1,6 @@
 # @4d-id/js
 
-The 4D-ID JavaScript / TypeScript SDK. Mint, resolve, and query spatial identities, in the browser or against a resolver.
+The 4D-ID™ JavaScript / TypeScript SDK. Mint, resolve, and query spatial identities, in the browser or against a resolver.
 
 [![npm](https://img.shields.io/npm/v/@4d-id/js.svg)](https://www.npmjs.com/package/@4d-id/js)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
