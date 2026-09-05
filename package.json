@@ -1,0 +1,15 @@
+{
+  "name": "@4d-id/js",
+  "version": "0.3.0",
+  "description": "4D-ID JavaScript/TypeScript SDK: mint, resolve, and query spatial identities, in the browser or against a resolver.",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": { ".": "./src/index.js" },
+  "files": ["src", "README.md", "LICENSE"],
+  "scripts": { "test": "node test/test.mjs" },
+  "keywords": ["4d-id","spatial","identity","dggs","geopose","h3","spatial-computing"],
+  "license": "Apache-2.0",
+  "repository": { "type":"git", "url":"https://github.com/4d-id/js-sdk" },
+  "homepage": "https://x4d-id.exe.xyz",
+  "dependencies": { "h3-js": "^4.5.0" }
+}

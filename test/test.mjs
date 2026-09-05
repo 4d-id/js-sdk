@@ -1,0 +1,12 @@
+import { mint, parse, zoneOf, Local, FOURDID } from "../src/index.js";
+let fail=0; const t=(n,c)=>{ console.log(`  ${c?"ok  ":"FAIL"} ${n}`); if(!c) fail++; };
+const id = mint(33.713,-117.943,{vref:"floor.12"});
+t("mint is valid", FOURDID.test(id));
+const p = parse(id); t("parse vref", p.vref==="floor.12"); t("parse variant", p.variant==="h3");
+t("zoneOf shorter than cell", zoneOf(p.cell).length <= p.cell.length);
+const L = new Local();
+const e = L.create({lat:33.713,lng:-117.943,label:"unit",cls:"built:property",address:"2058 Valley Rd"});
+const r = L.resolve({registry:"address",external_id:"2058 Valley Rd"});
+t("resolve returns minted id", r && r.id===e.id);
+t("context has class", L.context(e.id).class==="built:property");
+console.log(`\n${fail?"FAIL":"PASS"}: ${fail} problem(s).`); process.exit(fail?1:0);
