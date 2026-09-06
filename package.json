@@ -10,6 +10,6 @@
   "keywords": ["4d-id","spatial","identity","dggs","geopose","h3","spatial-computing"],
   "license": "Apache-2.0",
   "repository": { "type":"git", "url":"https://github.com/4d-id/js-sdk" },
-  "homepage": "https://x4d-id.exe.xyz",
+  "homepage": "https://4d-id.org",
   "dependencies": { "h3-js": "^4.5.0" }
 }
