@@ -1,7 +1,7 @@
 {
   "name": "@4d-id/js",
   "version": "0.3.0",
-  "description": "4D-ID JavaScript/TypeScript SDK: mint, resolve, and query spatial identities, in the browser or against a resolver.",
+  "description": "4D-ID JavaScript/TypeScript SDK: create syntactically valid identifiers from caller-supplied grounding, then resolve and query records.",
   "type": "module",
   "main": "src/index.js",
   "exports": { ".": "./src/index.js" },

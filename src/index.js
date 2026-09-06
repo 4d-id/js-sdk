@@ -1,6 +1,7 @@
 // @4d-id/js — the 4D-ID JavaScript/TypeScript SDK.
 // Two ways to use it:
-//   1. Local: mint and resolve identities in-process (browser or Node), no server.
+//   1. Local: create syntactically valid identifiers from caller-supplied grounding
+//      and resolve records in-process (browser or Node), no server.
 //   2. Client: talk to a running 4D-ID resolver over its REST binding.
 // Both speak the same access operations defined in the 4D-ID specification, Clause 10.
 
@@ -36,7 +37,8 @@ export function parse(id) {
   return { variant, domain, cell, vref, local: gm[1], genesis: gm[2] || null };
 }
 
-/** Mint a valid 4D-ID anchored at a latitude/longitude. */
+/** Create a syntactically valid 4D-ID from caller-supplied latitude/longitude grounding.
+ * This does not establish identity truth or perform matching. */
 export function mint(lat, lng, { vref = null } = {}) {
   const cell = h3.latLngToCell(lat, lng, ANCHOR_RES);
   return `4did:h3:${cell}${vref ? `;v=${vref}` : ""}:${descriptor()}`;
@@ -47,7 +49,7 @@ export function zoneOf(cell) {
   return h3.getResolution(cell) > ZONE_RES ? h3.cellToParent(cell, ZONE_RES) : cell;
 }
 
-/** A local, in-process 4D-ID store: mint, register, resolve, context. No server. */
+/** A local, in-process 4D-ID record store: create, resolve, context. No server. */
 export class Local {
   constructor() { this.entities = new Map(); this.ext = new Map(); }
   create({ lat, lng, label, cls, address, apn, vref = null, relations = [] }) {
