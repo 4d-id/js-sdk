@@ -21,6 +21,11 @@ function descriptor() {
   return b64.replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
 }
 
+export function genesisMarker(date = new Date()) {
+  const p = n => String(n).padStart(2, "0");
+  return `${date.getUTCFullYear()}${p(date.getUTCMonth()+1)}${p(date.getUTCDate())}T${p(date.getUTCHours())}${p(date.getUTCMinutes())}${p(date.getUTCSeconds())}Z`;
+}
+
 /** Parse a canonical 4D-ID into its parts (Part 1, 7.2). */
 export function parse(id) {
   if (!FOURDID.test(id)) throw new Error(`invalid 4D-ID: ${id}`);
@@ -39,9 +44,16 @@ export function parse(id) {
 
 /** Create a syntactically valid 4D-ID from caller-supplied latitude/longitude grounding.
  * This does not establish identity truth or perform matching. */
-export function mint(lat, lng, { vref = null } = {}) {
+export function mint(lat, lng, { vref = null, genesis = genesisMarker() } = {}) {
   const cell = h3.latLngToCell(lat, lng, ANCHOR_RES);
-  return `4did:h3:${cell}${vref ? `;v=${vref}` : ""}:${descriptor()}`;
+  return `4did:h3:${cell}${vref ? `;v=${vref}` : ""}:${descriptor()}:${genesis}`;
+}
+
+/** Create a non-spatial identifier whose home token contains no place, person, or time data.
+ * The token is syntactically unique only; grounding and authority still come from records/resolution. */
+export function mintPrivate(homeToken) {
+  if (!/^[A-Fa-f0-9]{32,64}$/.test(homeToken)) throw new Error("non-spatial home token must be 128-bit-or-greater random hexadecimal material");
+  return `4did:id:${homeToken}:${descriptor()}`;
 }
 
 /** The DGGS zone that contains an anchor cell (the routing/home-register key). */
@@ -52,19 +64,38 @@ export function zoneOf(cell) {
 /** A local, in-process 4D-ID record store: create, resolve, context. No server. */
 export class Local {
   constructor() { this.entities = new Map(); this.ext = new Map(); }
-  create({ lat, lng, label, cls, address, apn, vref = null, relations = [] }) {
-    const id = mint(lat, lng, { vref });
-    const cell = parse(id).cell;
-    const rels = [
+  #relations({ address, apn, relations }) {
+    return [
       ...(address ? [{ type: "identified_as", registry: "address", external_id: address }] : []),
       ...(apn ? [{ type: "identified_as", registry: "parcel.apn", external_id: apn }] : []),
       ...relations
     ];
+  }
+  #key(r) { return `${r.registry}\u0000${r.external_id.toLowerCase()}`; }
+  create({ lat, lng, label, cls, address, apn, vref = null, relations = [] }) {
+    const rels = this.#relations({ address, apn, relations });
+    for (const r of rels.filter(r => r.type === "identified_as")) {
+      const existing = this.ext.get(this.#key(r));
+      if (existing) throw new Error(`external identifier already resolves to ${existing}; use resolveOrCreate`);
+    }
+    const id = mint(lat, lng, { vref });
+    const cell = parse(id).cell;
     const ent = { id, anchor: { variant:"h3", cell, resolution: ANCHOR_RES }, zone: zoneOf(cell), lat, lng,
       labels: label ? [{ text: label }] : [], class: cls || null, relations: rels, minted: new Date().toISOString() };
     this.entities.set(id, ent);
-    for (const r of rels) if (r.type === "identified_as") this.ext.set(`${r.registry}\u0000${r.external_id.toLowerCase()}`, id);
+    for (const r of rels) if (r.type === "identified_as") this.ext.set(this.#key(r), id);
     return ent;
+  }
+  resolveOrCreate(input) {
+    const rels = this.#relations({ address: input.address, apn: input.apn, relations: input.relations || [] });
+    const matches = new Set(rels.filter(r => r.type === "identified_as").map(r => this.ext.get(this.#key(r))).filter(Boolean));
+    if (matches.size > 1) return { outcome: "ambiguous", candidates: [...matches], created: false, entity: null };
+    if (matches.size === 1) {
+      const entity = this.entities.get([...matches][0]);
+      return { outcome: "reused", candidates: [entity.id], created: false, entity };
+    }
+    const entity = this.create(input);
+    return { outcome: "minted", candidates: [], created: true, entity };
   }
   resolve({ registry, external_id, id }) {
     const t = id || (registry && external_id && this.ext.get(`${registry}\u0000${external_id.toLowerCase()}`));

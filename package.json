@@ -1,7 +1,7 @@
 {
   "name": "@4d-id/js",
-  "version": "0.3.0",
-  "description": "4D-ID JavaScript/TypeScript SDK: create syntactically valid identifiers from caller-supplied grounding, then resolve and query records.",
+  "version": "0.4.0",
+  "description": "4D-ID JavaScript SDK for caller-grounded records, privacy-mode identifiers, resolve-before-mint reuse, and resolver queries.",
   "type": "module",
   "main": "src/index.js",
   "exports": { ".": "./src/index.js" },

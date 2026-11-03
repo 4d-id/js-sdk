@@ -1,6 +1,6 @@
 # @4d-id/js
 
-The 4D-ID™ JavaScript / TypeScript SDK. Create syntactically valid identifiers from caller-supplied grounding, then resolve and query records in the browser or against a resolver.
+The 4D-ID™ JavaScript SDK for caller-grounded records, exact-identifier reuse, privacy-mode identifiers, and resolver queries.
 
 The SDK does not perceive, ground, localize, register, or render an entity. Like a UUID, a generated token provides uniqueness but does not establish which real-world thing it denotes; 4D-ID records add resolution, aliases, hierarchy, representations, state/time, provenance, and lifecycle continuity.
 
@@ -16,17 +16,23 @@ npm install @4d-id/js
 **Local** — create syntactically valid identifiers from caller-supplied grounding and resolve them in-process, with no server. Works in the browser or Node.
 
 ```js
-import { Local, mint, parse } from "@4d-id/js";
+import { Local, mint, mintPrivate, parse } from "@4d-id/js";
 
-// create a syntactically valid identifier from caller-supplied grounding
+// Spatial form: the cell is immutable genesis/routing metadata, not current location.
 const id = mint(33.713, -117.943, { vref: "floor.12" });
-// -> "4did:h3:8c29a0b...;v=floor.12:AZmR3kB8..."
+
+// Privacy mode: the home token carries no place, person, or time information.
+const privateId = mintPrivate("6c986e8b29c144bb9c5701c8e9cf1564");
 
 const world = new Local();
-const unit = world.create({ lat: 33.713, lng: -117.943, label: "Unit 1204", cls: "built:property", address: "2058 Valley Rd" });
+const result = world.resolveOrCreate({
+  lat: 33.713, lng: -117.943, label: "Unit 1204",
+  cls: "built:property", address: "2058 Valley Rd"
+});
+// Run the same operation again and result.outcome is "reused", not "minted".
 
-world.resolve({ registry: "address", external_id: "2058 Valley Rd" }); // -> { id, locator }
-world.context(unit.id); // -> compact description
+world.resolve({ registry: "address", external_id: "2058 Valley Rd" });
+world.context(result.entity.id);
 ```
 
 **Client** — talk to a running [4D-ID resolver](https://github.com/4d-id/reference-resolver) over its REST binding.
@@ -45,12 +51,14 @@ Both speak the same access operations defined in the [4D-ID specification](https
 
 ## API
 
-- `mint(lat, lng, { vref })` — creates a syntactically valid identifier from caller-supplied grounding; it does not establish identity truth or perform matching.
-- `parse(id)` — the identifier's parts (variant, cell, vref, domain, local, genesis).
-- `zoneOf(cell)` — the DGGS zone (routing / home-register key).
-- `Local` — an in-process store: `create`, `resolve`, `entity`, `context`, `all`.
+- `mint(lat, lng, { vref })` creates a spatial-form identifier from caller-supplied grounding. Its cell is genesis/routing metadata, not current location or identity evidence.
+- `mintPrivate(homeToken)` creates a non-spatial `id`-variant identifier without place or time metadata.
+- `parse(id)` returns the identifier parts.
+- `zoneOf(cell)` returns a DGGS routing zone for spatial-form records.
+- `Local.resolveOrCreate(...)` resolves exact aliases first, reports ambiguity, and mints only when none resolve.
+- `Local.create(...)` is an explicit mint and rejects an already-bound exact alias.
 - `Client(baseUrl)` — a resolver client: `resolve`, `entity`, `state`, `relations`, `representations`, `context`, `snapshot`, `watch`.
 
 ## License
 
-Apache-2.0. Built on the royalty-free [4D-ID specification](https://github.com/4d-id/spec).
+Apache-2.0. Built against the 4D-ID 2.4 working draft offered for community review.
